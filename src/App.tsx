@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { EXERCISES, HERO_LINES, type Exercise, type ExerciseLevel } from './data/exercises'
 
-type Page = 'home' | 'exercises' | 'detail' | 'games' | 'progress' | 'results' | 'teacher'
+type Page = 'home' | 'exercises' | 'detail' | 'games' | 'progress' | 'results'
 type TTTMode = 'pvp' | 'ai'
 const COLS = 20, ROWS = 20, CELL = 20
 
@@ -277,18 +278,20 @@ export default function App() {
             <span className="logo-text">CodeKids</span>
           </div>
           <div className="nav-links">
-            {(['home', 'exercises', 'games', 'progress', 'results', 'teacher'] as const).map(p => (
+            {(['home', 'exercises', 'games', 'progress', 'results'] as const).map(p => (
               <button key={p} className={`nav-btn${page === p ? ' active' : ''}`} onClick={() => setPage(p)}>
                 {p === 'home' ? '🏠 Trang Chủ'
                   : p === 'exercises' ? '📚 Bài Tập'
                     : p === 'games' ? '🎮 Trò Chơi'
                       : p === 'progress' ? '🏆 Thành Tích'
-                        : p === 'results' ? '📊 Kết Quả'
-                          : '🔑 Đáp Án GV'}
+                        : '📊 Kết Quả'}
               </button>
             ))}
           </div>
-          <div className="nav-stars"><span>⭐</span><span>{stars}</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+            <div className="nav-stars"><span>⭐</span><span>{stars}</span></div>
+            <Link to="/teacher" className="nav-btn" style={{ fontSize: '.8rem', opacity: 0.6 }} title="Trang đáp án giáo viênén">🔑 GV</Link>
+          </div>
         </div>
       </nav>
 
@@ -620,111 +623,6 @@ export default function App() {
               </>
             )
           })()}
-        </div>
-      </div>
-
-      {/* TEACHER PAGE */}
-      <div id="page-teacher" className={`page${page === 'teacher' ? ' active' : ''}`}>
-        <div className="page-header">
-          <h1>🔑 Đáp Án Dành Cho Giáo Viên</h1>
-          <p>Tổng hợp đáp án đúng của tất cả bài tập — dùng để chấm điểm hoặc hướng dẫn học sinh</p>
-        </div>
-        <div className="teacher-page">
-          <div className="teacher-notice">
-            <span>📘</span>
-            <div>
-              <strong>Hướng dẫn chấm điểm:</strong> Mỗi bài có 3 bước, mỗi bước đúng được số sao tương ứng. Đáp án đúng được tô xanh bên dưới.
-            </div>
-          </div>
-
-          {EXERCISES.map((ex, exIdx) => (
-            <div key={ex.id} className="teacher-exercise">
-              <div className="teacher-ex-header">
-                <span className="teacher-ex-num">Bài {exIdx + 1}</span>
-                <span className="teacher-ex-icon">{ex.icon}</span>
-                <div className="teacher-ex-title">
-                  <h2>{ex.title}</h2>
-                  <div style={{ display: 'flex', gap: '.75rem', marginTop: '.25rem', flexWrap: 'wrap' }}>
-                    <span className={`card-level level-${ex.level}`}>{levelLabel(ex.level)}</span>
-                    <span style={{ color: 'var(--warning)', fontWeight: 700, fontSize: '.85rem' }}>⭐ {ex.stars} sao</span>
-                  </div>
-                </div>
-              </div>
-
-              {ex.steps.map((step, sIdx) => (
-                <div key={sIdx} className="teacher-step">
-                  <div className="teacher-step-header">
-                    <span className="teacher-step-num">Bước {sIdx + 1}</span>
-                    <h3>{step.title}</h3>
-                    <span className={`teacher-step-type type-${step.type}`}>
-                      {step.type === 'quiz' ? '💡 Trắc nghiệm' : step.type === 'code' ? '⌨️ Viết code' : '🧩 Sắp xếp'}
-                    </span>
-                  </div>
-
-                  {/* Show code context if available */}
-                  {step.code && (
-                    <div className="teacher-code-ref">
-                      <div className="teacher-label">💻 Code tham khảo (hiển thị cho học sinh):</div>
-                      <pre className="teacher-code">{step.code}</pre>
-                    </div>
-                  )}
-
-                  {/* QUIZ answer */}
-                  {step.type === 'quiz' && (
-                    <div className="teacher-answer-block">
-                      <div className="teacher-label">✅ Đáp án đúng:</div>
-                      <div className="teacher-quiz-options">
-                        {step.options!.map((opt, oi) => (
-                          <div key={oi} className={`teacher-quiz-opt ${oi === step.correct ? 'teacher-correct' : ''}`}>
-                            <span className="teacher-opt-letter">{String.fromCharCode(65 + oi)}</span>
-                            <span>{opt}</span>
-                            {oi === step.correct && <span className="teacher-correct-badge">✓ Đúng</span>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* CODE answer */}
-                  {step.type === 'code' && (
-                    <div className="teacher-answer-block">
-                      <div className="teacher-label">✅ Code mẫu (học sinh cần viết tương tự):</div>
-                      <pre className="teacher-code teacher-answer-code">{step.placeholder}</pre>
-                      {step.hint && (
-                        <div className="teacher-hint">💡 <strong>Gợi ý đã cấp:</strong> {step.hint}</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ARRANGE answer */}
-                  {step.type === 'arrange' && (
-                    <div className="teacher-answer-block">
-                      <div className="teacher-label">✅ Thứ tự đúng:</div>
-                      <div className="teacher-arrange-answer">
-                        {(step.correct as number[]).map((idx, pos) => (
-                          <div key={pos} className="teacher-arrange-row">
-                            <span className="teacher-arrange-pos">{pos + 1}</span>
-                            <code className="teacher-arrange-block">{step.blocks![idx]}</code>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="teacher-label" style={{ marginTop: '1rem' }}>🔀 Các khối (cho học sinh xáo trộn):</div>
-                      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', marginTop: '.5rem' }}>
-                        {step.blocks!.map((b, bi) => (
-                          <code key={bi} className="teacher-block-chip">{b}</code>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-
-          <div className="teacher-footer">
-            <button className="btn-secondary" onClick={() => window.print()}>🖨️ In trang này</button>
-            <button className="btn-primary" onClick={() => setPage('exercises')}>📚 Xem Bài Tập</button>
-          </div>
         </div>
       </div>
 

@@ -29,6 +29,36 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #6C63FF #1A1930;
+}
+
+/* Webkit (Chrome / Edge / Safari) scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1930;
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #8B85FF, #6C63FF, #5A52E0);
+  border-radius: 100px;
+  border: 2px solid #1A1930;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #A09BFF, #8B85FF, #6C63FF);
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.6);
+}
+
+::-webkit-scrollbar-corner {
+  background: #1A1930;
 }
 
 html {
@@ -2017,5 +2047,37 @@ pre,
   .teacher-arrange-block {
     background: #d4f5e0 !important;
     color: #0a5c2e !important;
+  }
+}
+
+/* Standalone teacher route */
+.teacher-standalone {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.teacher-standalone-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(15, 14, 26, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.teacher-standalone-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media print {
+  .teacher-standalone-header {
+    display: none;
   }
 }
