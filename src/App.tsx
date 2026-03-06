@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { EXERCISES, HERO_LINES, type Exercise, type ExerciseLevel } from './data/exercises'
 
-type Page = 'home' | 'exercises' | 'detail' | 'games' | 'progress'
+type Page = 'home' | 'exercises' | 'detail' | 'games' | 'progress' | 'results' | 'teacher'
 type TTTMode = 'pvp' | 'ai'
 const COLS = 20, ROWS = 20, CELL = 20
 
@@ -50,7 +50,7 @@ export default function App() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const runningRef = useRef(false)
   const [snakeScore, setSnakeScore] = useState(0)
-  const [snakeHigh] = useState(() => parseInt(storeGet('ck_snake_high', '0')))
+  const [snakeHigh, setSnakeHigh] = useState(() => parseInt(storeGet('ck_snake_high', '0')))
   const [snakeOverlay, setSnakeOverlay] = useState({ show: true, icon: '🐍', title: 'Rắn Săn Mồi', msg: 'Dùng phím mũi tên hoặc WASD', startLabel: '▶ Bắt Đầu' })
 
   // Per-step state
@@ -124,17 +124,32 @@ export default function App() {
     if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
       const head = { x: snakeRef.current[0].x + dirRef.current.x, y: snakeRef.current[0].y + dirRef.current.y }
+      // Collision: wall or self
       if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS || snakeRef.current.some(s => s.x === head.x && s.y === head.y)) {
-        runningRef.current = false; if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
-        setSnakeOverlay({ show: true, icon: '💀', title: 'Game Over!', msg: `Điểm: ${snakeRef.current.length * 10 - 30}`, startLabel: '▶ Chơi lại' })
+        const finalScore = (snakeRef.current.length - 3) * 10
+        runningRef.current = false
+        if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+        if (finalScore > parseInt(storeGet('ck_snake_high', '0'))) {
+          storeSet('ck_snake_high', String(finalScore))
+          setSnakeHigh(finalScore)
+        }
+        setSnakeOverlay({ show: true, icon: '💀', title: 'Game Over!', msg: `Điểm: ${finalScore}`, startLabel: '▶ Chơi lại' })
         return
       }
+      // Move snake
       snakeRef.current = [head, ...snakeRef.current]
       if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
+        // Ate food
         const sc = (snakeRef.current.length - 3) * 10
-        setSnakeScore(sc); if (sc > parseInt(storeGet('ck_snake_high', '0'))) storeSet('ck_snake_high', String(sc))
+        setSnakeScore(sc)
+        if (sc > parseInt(storeGet('ck_snake_high', '0'))) {
+          storeSet('ck_snake_high', String(sc))
+          setSnakeHigh(sc)
+        }
         placeFood()
-      } else { snakeRef.current.pop() }
+      } else {
+        snakeRef.current.pop() // remove tail
+      }
       drawSnake()
     }, 120)
   }
@@ -248,8 +263,7 @@ export default function App() {
     if (ok) setTimeout(() => advanceStep(curEx!, stepIdx), 1500)
   }
 
-  const snakeUnlocked = completed.length >= 1
-  const tttUnlocked = completed.length >= 2
+
   const filtered = EXERCISES.filter(e => filter === 'all' || e.level === filter)
   const pct = Math.round((completed.length / EXERCISES.length) * 100)
 
@@ -263,9 +277,14 @@ export default function App() {
             <span className="logo-text">CodeKids</span>
           </div>
           <div className="nav-links">
-            {(['home', 'exercises', 'games', 'progress'] as const).map(p => (
+            {(['home', 'exercises', 'games', 'progress', 'results', 'teacher'] as const).map(p => (
               <button key={p} className={`nav-btn${page === p ? ' active' : ''}`} onClick={() => setPage(p)}>
-                {p === 'home' ? '🏠 Trang Chủ' : p === 'exercises' ? '📚 Bài Tập' : p === 'games' ? '🎮 Trò Chơi' : '🏆 Thành Tích'}
+                {p === 'home' ? '🏠 Trang Chủ'
+                  : p === 'exercises' ? '📚 Bài Tập'
+                    : p === 'games' ? '🎮 Trò Chơi'
+                      : p === 'progress' ? '🏆 Thành Tích'
+                        : p === 'results' ? '📊 Kết Quả'
+                          : '🔑 Đáp Án GV'}
               </button>
             ))}
           </div>
@@ -282,6 +301,7 @@ export default function App() {
           <div className="hero-content">
             <div className="hero-badge">✨ Dành cho học sinh</div>
             <h1 className="hero-title">Học Lập Trình<br /><span className="gradient-text">Siêu Vui!</span></h1>
+            <h2>Thầy - Đức Thành Nam</h2><br></br>
             <p className="hero-subtitle">Làm quen với lập trình qua các bài tập từng bước và trò chơi thú vị. Không cần biết gì trước!</p>
             <div className="hero-cta">
               <button className="btn-primary" onClick={() => setPage('exercises')}>🚀 Bắt Đầu Học</button>
@@ -303,7 +323,7 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="features">
+        {/* <div className="features">
           <h2 className="section-title">Tại sao chọn CodeKids? 🤔</h2>
           <div className="features-grid">
             {[['📖', 'Hướng dẫn từng bước', 'Mỗi bài tập đều có hướng dẫn chi tiết, từng bước một dễ hiểu.'],
@@ -317,7 +337,7 @@ export default function App() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
         <div className="quick-start">
           <h2 className="section-title">Bài tập nổi bật 🌟</h2>
           <div className="exercise-preview-grid">
@@ -446,8 +466,8 @@ export default function App() {
             <div className="game-info">
               <h3>Rắn Săn Mồi</h3>
               <p>Điều khiển chú rắn ăn mồi, tránh va vào tường!</p>
-              {!snakeUnlocked
-                ? <div className="game-lock">🔒 Hoàn thành 1 bài tập để mở khóa</div>
+              {!completed.includes('ex07')
+                ? <div className="game-lock">🔒 Hoàn thành bài <strong>"Lập Trình Rắn Săn Mồi 🐍"</strong> để mở khóa</div>
                 : <button className="btn-primary" onClick={() => { setSnakeOpen(true); setSnakeOverlay(o => ({ ...o, show: true })) }}>🎮 Chơi Ngay</button>}
             </div>
           </div>
@@ -459,8 +479,8 @@ export default function App() {
             <div className="game-info">
               <h3>Cờ Caro</h3>
               <p>Chơi cờ caro 3×3 với máy hoặc bạn bè!</p>
-              {!tttUnlocked
-                ? <div className="game-lock">🔒 Hoàn thành 2 bài tập để mở khóa</div>
+              {!completed.includes('ex08')
+                ? <div className="game-lock">🔒 Hoàn thành bài <strong>"Lập Trình Cờ Caro ❌⭕"</strong> để mở khóa</div>
                 : <button className="btn-primary" onClick={() => { setTttOpen(true); resetTTT() }}>🎮 Chơi Ngay</button>}
             </div>
           </div>
@@ -496,6 +516,214 @@ export default function App() {
                 <span style={{ color: 'var(--warning)', fontSize: '.85rem', fontWeight: 700 }}>⭐ {ex.stars}</span>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RESULTS */}
+      <div id="page-results" className={`page${page === 'results' ? ' active' : ''}`}>
+        <div className="page-header">
+          <h1>📊 Kết Quả Học Tập</h1>
+          <p>Bảng tổng hợp kết quả tất cả bài tập của bạn</p>
+        </div>
+        <div className="results-page">
+          {/* REPORT CARD */}
+          {(() => {
+            const totalStars = EXERCISES.reduce((s, e) => s + e.stars, 0)
+            const earnedStars = EXERCISES.filter(e => completed.includes(e.id)).reduce((s, e) => s + e.stars, 0)
+            const pctDone = Math.round((completed.length / EXERCISES.length) * 100)
+            const grade = pctDone === 100 ? { label: 'A+', text: 'Xuất Sắc!', color: '#43E97B', emoji: '🎖️' }
+              : pctDone >= 75 ? { label: 'A', text: 'Giỏi!', color: '#82AAFF', emoji: '🏅' }
+                : pctDone >= 50 ? { label: 'B', text: 'Khá!', color: '#F7971E', emoji: '👍' }
+                  : pctDone >= 25 ? { label: 'C', text: 'Trung Bình', color: '#FF9FB4', emoji: '✏️' }
+                    : { label: 'D', text: 'Cần Cố Gắng', color: '#9896B8', emoji: '💪' }
+            return (
+              <>
+                {/* Grade card */}
+                <div className="results-report-card">
+                  <div className="report-grade" style={{ color: grade.color }}>
+                    <div className="grade-emoji">{grade.emoji}</div>
+                    <div className="grade-label" style={{ background: grade.color }}>{grade.label}</div>
+                    <div className="grade-text">{grade.text}</div>
+                  </div>
+                  <div className="report-summary">
+                    <div className="report-stat-row">
+                      <span className="report-stat-label">📚 Bài hoàn thành</span>
+                      <span className="report-stat-val">{completed.length} / {EXERCISES.length}</span>
+                    </div>
+                    <div className="report-stat-row">
+                      <span className="report-stat-label">⭐ Tổng sao
+                      </span>
+                      <span className="report-stat-val" style={{ color: 'var(--warning)' }}>{earnedStars} / {totalStars}</span>
+                    </div>
+                    <div className="report-stat-row">
+                      <span className="report-stat-label">📊 Tiến độ</span>
+                      <span className="report-stat-val">{pctDone}%</span>
+                    </div>
+                    <div className="report-star-bar-wrap">
+                      <div className="report-star-bar-track">
+                        <div className="report-star-bar-fill" style={{ width: `${pctDone}%`, background: grade.color }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Per-exercise table */}
+                <div className="results-table-header">
+                  <span>Bài học</span>
+                  <span>Cấp độ</span>
+                  <span>Sao</span>
+                  <span>Trạng thái</span>
+                </div>
+                <div className="results-table">
+                  {EXERCISES.map(ex => {
+                    const done = completed.includes(ex.id)
+                    return (
+                      <div key={ex.id} className={`results-row${done ? ' done' : ''}`} onClick={() => openExercise(ex)}>
+                        <div className="results-row-title">
+                          <span className="results-row-icon">{ex.icon}</span>
+                          <div>
+                            <div className="results-row-name">{ex.title}</div>
+                            {ex.id === 'ex07' && <div className="results-row-badge">👋 Mở khóa 🐍 Rắn Săn Mồi</div>}
+                            {ex.id === 'ex08' && <div className="results-row-badge">👋 Mở khóa ❌⮕ Cờ Caro</div>}
+                          </div>
+                        </div>
+                        <div><span className={`card-level level-${ex.level}`} style={{ fontSize: '.75rem' }}>{levelLabel(ex.level)}</span></div>
+                        <div className="results-row-stars">
+                          {Array.from({ length: ex.stars }).map((_, i) => (
+                            <span key={i} style={{ color: done ? 'var(--warning)' : 'var(--bg3)', fontSize: '1rem' }}>⭐</span>
+                          ))}
+                          <span style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginLeft: '.25rem' }}>{done ? ex.stars : 0}/{ex.stars}</span>
+                        </div>
+                        <div className="results-row-status">
+                          {done
+                            ? <span className="status-done">✅ Hoàn thành</span>
+                            : <span className="status-pending">⏳ Chưa làm</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="results-actions">
+                  {completed.length < EXERCISES.length && (
+                    <button className="btn-primary" onClick={() => setPage('exercises')}>🚀 Tiếp tục học</button>
+                  )}
+                  {completed.length === EXERCISES.length && (
+                    <button className="btn-primary" onClick={() => setPage('games')}>🎮 Chơi Thưởng</button>
+                  )}
+                  <button className="btn-secondary" onClick={() => {
+                    if (window.confirm('Reset tất cả tiến trình? (không thể hoàn tác)')) { setCompleted([]); setStars(0); storeSet('ck_completed', '[]'); storeSet('ck_stars', '0') }
+                  }}>🔄 Reset tiến trình</button>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      </div>
+
+      {/* TEACHER PAGE */}
+      <div id="page-teacher" className={`page${page === 'teacher' ? ' active' : ''}`}>
+        <div className="page-header">
+          <h1>🔑 Đáp Án Dành Cho Giáo Viên</h1>
+          <p>Tổng hợp đáp án đúng của tất cả bài tập — dùng để chấm điểm hoặc hướng dẫn học sinh</p>
+        </div>
+        <div className="teacher-page">
+          <div className="teacher-notice">
+            <span>📘</span>
+            <div>
+              <strong>Hướng dẫn chấm điểm:</strong> Mỗi bài có 3 bước, mỗi bước đúng được số sao tương ứng. Đáp án đúng được tô xanh bên dưới.
+            </div>
+          </div>
+
+          {EXERCISES.map((ex, exIdx) => (
+            <div key={ex.id} className="teacher-exercise">
+              <div className="teacher-ex-header">
+                <span className="teacher-ex-num">Bài {exIdx + 1}</span>
+                <span className="teacher-ex-icon">{ex.icon}</span>
+                <div className="teacher-ex-title">
+                  <h2>{ex.title}</h2>
+                  <div style={{ display: 'flex', gap: '.75rem', marginTop: '.25rem', flexWrap: 'wrap' }}>
+                    <span className={`card-level level-${ex.level}`}>{levelLabel(ex.level)}</span>
+                    <span style={{ color: 'var(--warning)', fontWeight: 700, fontSize: '.85rem' }}>⭐ {ex.stars} sao</span>
+                  </div>
+                </div>
+              </div>
+
+              {ex.steps.map((step, sIdx) => (
+                <div key={sIdx} className="teacher-step">
+                  <div className="teacher-step-header">
+                    <span className="teacher-step-num">Bước {sIdx + 1}</span>
+                    <h3>{step.title}</h3>
+                    <span className={`teacher-step-type type-${step.type}`}>
+                      {step.type === 'quiz' ? '💡 Trắc nghiệm' : step.type === 'code' ? '⌨️ Viết code' : '🧩 Sắp xếp'}
+                    </span>
+                  </div>
+
+                  {/* Show code context if available */}
+                  {step.code && (
+                    <div className="teacher-code-ref">
+                      <div className="teacher-label">💻 Code tham khảo (hiển thị cho học sinh):</div>
+                      <pre className="teacher-code">{step.code}</pre>
+                    </div>
+                  )}
+
+                  {/* QUIZ answer */}
+                  {step.type === 'quiz' && (
+                    <div className="teacher-answer-block">
+                      <div className="teacher-label">✅ Đáp án đúng:</div>
+                      <div className="teacher-quiz-options">
+                        {step.options!.map((opt, oi) => (
+                          <div key={oi} className={`teacher-quiz-opt ${oi === step.correct ? 'teacher-correct' : ''}`}>
+                            <span className="teacher-opt-letter">{String.fromCharCode(65 + oi)}</span>
+                            <span>{opt}</span>
+                            {oi === step.correct && <span className="teacher-correct-badge">✓ Đúng</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CODE answer */}
+                  {step.type === 'code' && (
+                    <div className="teacher-answer-block">
+                      <div className="teacher-label">✅ Code mẫu (học sinh cần viết tương tự):</div>
+                      <pre className="teacher-code teacher-answer-code">{step.placeholder}</pre>
+                      {step.hint && (
+                        <div className="teacher-hint">💡 <strong>Gợi ý đã cấp:</strong> {step.hint}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ARRANGE answer */}
+                  {step.type === 'arrange' && (
+                    <div className="teacher-answer-block">
+                      <div className="teacher-label">✅ Thứ tự đúng:</div>
+                      <div className="teacher-arrange-answer">
+                        {(step.correct as number[]).map((idx, pos) => (
+                          <div key={pos} className="teacher-arrange-row">
+                            <span className="teacher-arrange-pos">{pos + 1}</span>
+                            <code className="teacher-arrange-block">{step.blocks![idx]}</code>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="teacher-label" style={{ marginTop: '1rem' }}>🔀 Các khối (cho học sinh xáo trộn):</div>
+                      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', marginTop: '.5rem' }}>
+                        {step.blocks!.map((b, bi) => (
+                          <code key={bi} className="teacher-block-chip">{b}</code>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <div className="teacher-footer">
+            <button className="btn-secondary" onClick={() => window.print()}>🖨️ In trang này</button>
+            <button className="btn-primary" onClick={() => setPage('exercises')}>📚 Xem Bài Tập</button>
           </div>
         </div>
       </div>

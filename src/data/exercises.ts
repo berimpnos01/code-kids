@@ -214,6 +214,84 @@ export const EXERCISES: Exercise[] = [
                 feedback: '🎓 Hoàn hảo! 1+2+...+100 = 5050!'
             }
         ]
+    },
+    {
+        id: 'ex07', title: 'Lập Trình Rắn Săn Mồi 🐍', icon: '🐍',
+        description: 'Khám phá cách lập trình trò chơi Rắn Săn Mồi từng bước — rồi chơi thử ngay!',
+        level: 'advanced', stars: 5,
+        steps: [
+            {
+                title: 'Game hoạt động như thế nào?', type: 'quiz',
+                explanation: 'Rắn Săn Mồi dùng một vòng lặp game (game loop) chạy liên tục: cập nhật vị trí rắn → vẽ lại màn hình → kiểm tra va chạm → lặp lại.',
+                code: '# Cấu trúc cơ bản của game loop:\nwhile dang_chay:\n    xu_ly_phim_bam()    # Đọc input\n    cap_nhat_vi_tri()   # Di chuyển rắn\n    kiem_tra_va_cham()  # Tường? Thân rắn?\n    ve_lai_man_hinh()   # Hiển thị',
+                question: 'Thành phần nào KHÔNG có trong game loop của Rắn Săn Mồi?',
+                options: ['Đọc phím mũi tên', 'Di chuyển vị trí rắn', 'Tính điểm môn học', 'Vẽ lại màn hình'],
+                correct: 2,
+                feedback: '🐍 Đúng! Tính điểm môn học không liên quan — game loop chỉ xử lý: input, cập nhật, vẽ!'
+            },
+            {
+                title: 'Lập trình di chuyển rắn', type: 'code',
+                explanation: 'Rắn được lưu như một danh sách các ô (x, y). Mỗi bước, ta thêm đầu mới và xóa đuôi cũ — rắn "di chuyển" mà không cần dịch từng ô!',
+                code: '# Rắn là list các tọa độ:\nran = [(5,5), (4,5), (3,5)]  # đầu→đuôi\nhướng = (1, 0)               # đang đi sang phải\n\n# Di chuyển: thêm đầu mới\ndau_moi = (ran[0][0] + hướng[0],\n           ran[0][1] + hướng[1])',
+                placeholder: 'ran = [(5,5), (4,5), (3,5)]\nhuong = (1, 0)\ndau_moi = (ran[0][0] + huong[0], ran[0][1] + huong[1])\nran.insert(0, dau_moi)\nran.pop()  # xóa đuôi',
+                validate: (v) => v.includes('insert') && v.includes('pop') && (v.includes('ran') || v.includes('rắn')),
+                hint: 'Gợi ý: ran.insert(0, dau_moi) rồi ran.pop() để xóa đuôi',
+                feedback: '🎮 Rắn biết di chuyển rồi! Thêm thức ăn và va chạm là xong!'
+            },
+            {
+                title: 'Sắp xếp logic game đầy đủ', type: 'arrange',
+                explanation: 'Sắp xếp các bước để hoàn thiện vòng lặp game Rắn Săn Mồi.',
+                blocks: [
+                    'if dau_moi == vi_tri_thuc_an:',
+                    '    ran.pop()  # xóa đuôi (di chuyển bình thường)',
+                    'ran.insert(0, dau_moi)  # thêm đầu mới',
+                    '    diem += 1  # ăn được mồi!',
+                    'else:',
+                    'dau_moi = tinh_dau_moi(ran[0], huong)',
+                ],
+                correct: [5, 2, 0, 3, 4, 1],
+                feedback: '🏆 Xuất sắc! Bạn vừa lập trình xong logic cốt lõi của Rắn Săn Mồi!'
+            }
+        ]
+    },
+    {
+        id: 'ex08', title: 'Lập Trình Cờ Caro ❌⭕', icon: '❌',
+        description: 'Học cách xây dựng trò chơi Cờ Caro — từ bàn cờ đến kiểm tra thắng thua!',
+        level: 'advanced', stars: 5,
+        steps: [
+            {
+                title: 'Bàn cờ là gì trong lập trình?', type: 'quiz',
+                explanation: 'Bàn cờ 3×3 được lưu như một danh sách 9 ô. Mỗi ô có giá trị: "X", "O", hoặc "" (trống). Index từ 0→8, từ trái→phải, trên→dưới.',
+                code: '# Bàn cờ 3x3:\nban_co = ["", "", "",   # hàng 1: ô 0,1,2\n          "", "", "",   # hàng 2: ô 3,4,5\n          "", "", ""]  # hàng 3: ô 6,7,8\n\nban_co[4] = "X"  # đánh vào ô giữa',
+                question: 'Để đánh vào góc trên-phải (hàng 1, cột 3), dùng index nào?',
+                options: ['ban_co[0]', 'ban_co[2]', 'ban_co[3]', 'ban_co[6]'],
+                correct: 1,
+                feedback: '✅ Đúng! Index 2 là ô cuối hàng đầu tiên (0→trái, 1→giữa, 2→phải).'
+            },
+            {
+                title: 'Kiểm tra điều kiện thắng', type: 'code',
+                explanation: 'Có 8 tổ hợp thắng: 3 hàng ngang, 3 hàng dọc, 2 đường chéo. Viết hàm kiem_tra_thang(ban_co, nguoi_choi) trả về True nếu người chơi đó thắng.',
+                code: '# 8 tổ hợp thắng:\nTO_HOP_THANG = [\n    [0,1,2], [3,4,5], [6,7,8],  # ngang\n    [0,3,6], [1,4,7], [2,5,8],  # dọc\n    [0,4,8], [2,4,6]            # chéo\n]',
+                placeholder: 'def kiem_tra_thang(ban_co, nguoi_choi):\n    for to_hop in TO_HOP_THANG:\n        if all(ban_co[o] == nguoi_choi for o in to_hop):\n            return True\n    return False',
+                validate: (v) => v.includes('def') && v.includes('return True') && v.includes('return False'),
+                hint: 'Gợi ý: dùng for to_hop in TO_HOP_THANG: rồi kiểm tra all(ban_co[o] == nguoi_choi ...)',
+                feedback: '🎯 Hàm kiểm tra thắng hoạt động! Giờ cờ caro có thể biết ai thắng rồi!'
+            },
+            {
+                title: 'Sắp xếp lượt chơi AI', type: 'arrange',
+                explanation: 'Sắp xếp code để AI biết đi nước cờ tốt nhất: ưu tiên thắng → chặn → giữa → ngẫu nhiên.',
+                blocks: [
+                    'def ai_di(ban_co):',
+                    '    if o_giua_trong: return 4       # ưu tiên giữa',
+                    '    nuoc_thang = tim_nuoc(ban_co, "O")',
+                    '    if nuoc_thang is not None: return nuoc_thang',
+                    '    nuoc_chan = tim_nuoc(ban_co, "X")',
+                    '    if nuoc_chan is not None: return nuoc_chan',
+                ],
+                correct: [0, 2, 3, 4, 5, 1],
+                feedback: '🤖 AI của bạn biết suy nghĩ rồi! Ưu tiên thắng → chặn đối thủ → giữa bàn!'
+            }
+        ]
     }
 ]
 
